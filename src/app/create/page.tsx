@@ -19,7 +19,6 @@ export default function CreatePage() {
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [showCard, setShowCard] = useState(false);
 
-  // 🔐 Generate unique code (prevents collisions)
   const generateUniqueCode = async () => {
 
     let code = "";
@@ -35,15 +34,12 @@ export default function CreatePage() {
         .eq("code", code)
         .maybeSingle();
 
-      if (!data) {
-        exists = false;
-      }
+      if (!data) exists = false;
     }
 
     return code;
   };
 
-  // 🎉 Confetti
   const fireConfetti = () => {
     confetti({
       particleCount: 120,
@@ -66,7 +62,7 @@ export default function CreatePage() {
     if (!selectedFile) return;
 
     if (selectedFile.size > 5 * 1024 * 1024) {
-      alert("PDF must be under 5MB");
+      alert("File must be under 5MB");
       return;
     }
 
@@ -78,7 +74,7 @@ export default function CreatePage() {
   const handleUpload = async () => {
 
     if (!file) {
-      alert("Please select a PDF first");
+      alert("Please select a file first");
       return;
     }
 
@@ -112,14 +108,18 @@ export default function CreatePage() {
 
   const handleGenerate = async () => {
 
+    if (file && uploadStatus !== "uploaded") {
+      alert("Please upload the file before generating the code.");
+      return;
+    }
+
     if (!text.trim() && !uploadedUrl) {
-      alert("Please add text or upload a PDF");
+      alert("Please add text or upload a file");
       return;
     }
 
     setLoading(true);
 
-    // 🔐 generate unique code
     const code = await generateUniqueCode();
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -142,9 +142,7 @@ export default function CreatePage() {
     }
 
     setGeneratedCode(code);
-
     fireConfetti();
-
     setShowCard(true);
 
     setText("");
@@ -154,7 +152,7 @@ export default function CreatePage() {
   };
 
   const shareLink =
-    generatedCode && `${window.location.origin}/receive?code=${generatedCode}`;
+    generatedCode && `${window.location.origin}/receive/${generatedCode}`;
 
   return (
     <main className="min-h-screen flex items-center justify-center pt-32 pb-20 px-4 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
@@ -181,7 +179,7 @@ export default function CreatePage() {
           {text.length} / 5000 characters
         </p>
 
-        {/* Upload */}
+        {/* Upload Area */}
         <div className="mt-6">
           <label className="flex items-center justify-center w-full cursor-pointer border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-2xl p-6 bg-indigo-50 transition">
 
@@ -190,16 +188,19 @@ export default function CreatePage() {
                 <div>
                   <p className="text-green-600 font-semibold">✓ {file.name}</p>
                   <p className="text-xs text-gray-500 mt-1">
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
                     Click to change file
                   </p>
                 </div>
               ) : (
                 <div>
                   <p className="font-semibold text-gray-700">
-                    Upload PDF
+                    Upload File
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Max 5MB
+                    Max 5MB (images, docs, pdf, zip, etc.)
                   </p>
                 </div>
               )}
@@ -207,7 +208,7 @@ export default function CreatePage() {
 
             <input
               type="file"
-              accept="application/pdf"
+              accept="*"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -215,27 +216,44 @@ export default function CreatePage() {
           </label>
         </div>
 
+        {/* Upload Button */}
         {file && uploadStatus !== "uploaded" && (
           <button
             onClick={handleUpload}
-            className="mt-4 w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition cursor-pointer"
+            disabled={uploadStatus === "uploading"}
+            className="mt-4 w-full border border-indigo-500 text-indigo-600 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploadStatus === "uploading"
               ? "Uploading..."
-              : "Upload PDF"}
+              : "Upload File"}
+          </button>
+        )}
+
+        {/* Remove File */}
+        {file && (
+          <button
+            onClick={() => {
+              setFile(null);
+              setUploadedUrl(null);
+              setUploadStatus("idle");
+            }}
+            className="mt-3 w-full border border-red-400 text-red-500 py-2 rounded-xl hover:bg-red-50 transition cursor-pointer"
+          >
+            Remove Selected File
           </button>
         )}
 
         {uploadStatus === "uploaded" && (
           <div className="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-xl">
-            ✅ PDF uploaded successfully
+            ✅ File uploaded successfully
           </div>
         )}
 
+        {/* Generate Button */}
         <button
           onClick={handleGenerate}
-          disabled={loading}
-          className="mt-8 w-full bg-indigo-600 text-white py-4 rounded-2xl font-semibold hover:bg-indigo-700 transition cursor-pointer"
+          disabled={loading || uploadStatus === "uploading"}
+          className="mt-8 w-full bg-indigo-600 text-white py-4 rounded-2xl font-semibold hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Generating..." : "Generate Code"}
         </button>
