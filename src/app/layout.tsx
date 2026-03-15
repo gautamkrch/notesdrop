@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NotesDrop",
+  title: "NotesDrop - Share Notes with a Secure Code",
   description: "Share notes and files instantly using a secure 6-digit code or QR.",
   verification: {
     google: "hx7gb-OVW0rB2HB6CsOn_LY7rV2eSTzscf8yBfjU1M0",
